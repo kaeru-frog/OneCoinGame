@@ -100,6 +100,22 @@ bool OneCoinGame::init()
 	auto menu = Menu::create(insertCoinItem, NULL);
 	menu->setPosition(Vec2::ZERO);
 	this->addChild(menu, 2);
+	
+
+	/////////////////////////////
+	// 10‰~ƒQ[ƒ€âž‘Ì“à•”‚Ì—ÌˆæÝ’è
+	{
+		Vec2 vec[4] = {
+			Vec2(60, 600),
+			Vec2(60, 60),
+			Vec2(300, 60),
+			Vec2(300, 600),
+		};
+		auto wall = Node::create();
+		wall->setPhysicsBody(PhysicsBody::createEdgeChain(vec, 4, PhysicsMaterial(1.0f, 0.5f, 0.2f)));
+		wall->getPhysicsBody()->setDynamic(false);
+		this->addChild(wall);
+	}
 
 
     return true;
