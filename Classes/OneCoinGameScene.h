@@ -25,6 +25,7 @@ public:
 
 	// コイン投入口ボタン押下時のコールバック
 	void insertCoinCallback(cocos2d::Ref* pSender);
+	void coinEntry();
 
 	// タッチ処理
 	bool onTouchBegan(cocos2d::Touch* touch, cocos2d::Event* event);
@@ -39,6 +40,9 @@ public:
 
 	// 接触イベントの検知
 	bool onContactBegin(cocos2d::PhysicsContact& contact);
+
+	// DEMO画面用update
+	void demoUpdate(float delta);
 private:
 	cocos2d::Sprite	*_coin;	// コイン
 	cocos2d::Sprite	*_lever[4];	// レバー
@@ -47,6 +51,10 @@ private:
 	bool			_isTouchLever;
 	int				_touchLeverNumber;
 	cocos2d::Vec2	_touchlocation;
+
+	// デモモード
+	bool			_isDemo;
+	cocos2d::Sprite	*_demoSprite;
 };
 
 #endif // __ONECOINGAME_SCENE_H__

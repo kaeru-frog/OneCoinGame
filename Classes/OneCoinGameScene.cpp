@@ -300,8 +300,26 @@ bool OneCoinGame::init()
 	CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect("se/lever.wav");
 
 	/////////////////////////////
+	// デモ画面
+	// デモモードかどうか
+	_isDemo = false;
+	// デモ文字列の追加と点滅
+	_demoSprite = Sprite::create("demo_play.png");
+	_demoSprite->setPosition(Vec2(visibleSize.width*0.5, visibleSize.height*0.5));
+	this->addChild(_demoSprite, 4);
+	// フェードイン・アウトを繰り返す
+	auto fadeIn = FadeIn::create(1.0f);
+	auto fadeOut = FadeOut::create(1.0f);
+	_demoSprite->runAction(RepeatForever::create(Sequence::create(fadeIn, fadeOut, NULL)));
+	_demoSprite->setVisible(false);
+	_demoSprite->setOpacity(0);
+
+	/////////////////////////////
 	// スケジュール処理の開始
 	this->scheduleUpdate();
+
+	// カスタム定期処理の開始(5.0秒毎の呼び出し)
+	this->schedule(schedule_selector(OneCoinGame::demoUpdate), 5.0f);
 
     return true;
 }
@@ -309,6 +327,16 @@ bool OneCoinGame::init()
 
 // コイン投入ボタン
 void OneCoinGame::insertCoinCallback(cocos2d::Ref* pSender)
+{
+	this->coinEntry();
+
+	// デモ状態の解除
+	_isDemo = false;
+	_demoSprite->setVisible(false);
+}
+
+// コイン投入処理
+void OneCoinGame::coinEntry()
 {
 	Size visibleSize = Director::getInstance()->getVisibleSize();
 
@@ -481,9 +509,19 @@ void OneCoinGame::update(float delta)
 			CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("se/goal.wav");
 		}
 
-
 	}
 
+
+	/////////////////////////////////
+	// コインが無い状態で600カウント経過したらデモ状態にする
+	static int demoCount = 0;
+	if (!_isDemo && !_coin->getPhysicsBody()->isEnabled()) {
+		if (++demoCount >= 600) {
+			demoCount = 0;
+			_isDemo = true;
+			_demoSprite->setVisible(true);
+		}
+	}
 }
 
 // 衝突が発生した際に呼ばれるイベント
@@ -501,6 +539,46 @@ bool OneCoinGame::onContactBegin(PhysicsContact& contact)
 	}
 
 	return true;
+}
+
+
+// デモモード時の更新処理
+void OneCoinGame::demoUpdate(float delta)
+{
+	// デモ状態かどうか
+	if (!_isDemo) {
+		return;
+	}
+
+	// coinの状態を確認
+	// Enableがfalseなら、コイン投入処理
+	if (!_coin->getPhysicsBody()->isEnabled()) {
+		this->coinEntry();
+	}
+
+	// コインがレバー位置にあるなら、レバー処理
+	for (int i = 0; i < 4; i++) {
+		// 範囲内ならコインにランダムな力を加える
+		if (leverArea[i].containsPoint(_coin->getPosition())) {
+			auto power = CCRANDOM_0_1();
+
+			if (i == 0 || i == 2) {
+				this->applyForceCoin(1.0f, power);
+
+				_lever[i]->setRotation(power * -90);
+				_lever[i]->runAction(RotateTo::create(0.2, 0.0f));
+			}
+			else {
+				this->applyForceCoin(-1.0f, power);
+
+				_lever[i]->setRotation(power * 90);
+				_lever[i]->runAction(RotateTo::create(0.2, 0.0f));
+			}
+
+			// 効果音を鳴らす
+			CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("se/lever.wav");
+		}
+	}
 }
 
 
