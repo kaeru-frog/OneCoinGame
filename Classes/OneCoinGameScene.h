@@ -22,6 +22,11 @@ public:
     
     // implement the "static create()" method manually
 	CREATE_FUNC(OneCoinGame);
+
+	// コイン投入口ボタン押下時のコールバック
+	void insertCoinCallback(cocos2d::Ref* pSender);
+private:
+	cocos2d::Sprite	*_coin;	// コイン
 };
 
 #endif // __ONECOINGAME_SCENE_H__
