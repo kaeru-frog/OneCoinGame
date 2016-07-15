@@ -16,14 +16,24 @@ USING_NS_CC;
 
 Scene* OneCoinGame::createScene()
 {
-    // 'scene' is an autorelease object
-    auto scene = Scene::create();
+	// シーンを物理エンジンが使用できるシーンにする
+	auto scene = Scene::createWithPhysics();
     
     // 'layer' is an autorelease object
 	auto layer = OneCoinGame::create();
 
     // add layer as a child to scene
     scene->addChild(layer);
+
+	/////////////////////////////
+	// 物理エンジン用設定
+	auto world = scene->getPhysicsWorld();
+	// 物理シーンの計算速度
+	world->setSpeed(3.0f);
+	// 物理シーンのサブステップ数
+	world->setSubsteps(5);
+	// 物理エンジンのデバッグ用の領域を表示
+	world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
 
     // return the scene
     return scene;
@@ -60,7 +70,22 @@ bool OneCoinGame::init()
 	_coin->setPosition(Vec2(visibleSize.width*0.5, visibleSize.height*0.5));
 	this->addChild(_coin, 1);
 
+	/////////////////////////////
+	// コインに物理を設定する
+	// マテリアルの設定
+	PhysicsMaterial coinMaterial;
+	coinMaterial.density = 0.1f;		// 密度
+	coinMaterial.restitution = 0.5f;	// 反発係数
+	coinMaterial.friction = 0.4f;		// 摩擦係数
+
+	// 円形の物理設定
+	auto coinPhysics = PhysicsBody::createCircle(12.5f, coinMaterial);
+
+	// コインに剛体を関連付ける
+	_coin->setPhysicsBody(coinPhysics);
+
 	// コインを停止し、非表示にしておく
+	_coin->getPhysicsBody()->setEnabled(false);
 	_coin->setVisible(false);
 
 	/////////////////////////////
@@ -84,7 +109,17 @@ bool OneCoinGame::init()
 // コイン投入ボタン
 void OneCoinGame::insertCoinCallback(cocos2d::Ref* pSender)
 {
-	// コインの表示
+	Size visibleSize = Director::getInstance()->getVisibleSize();
+
+	// コインに働いている物理の力をリセットする
+	_coin->getPhysicsBody()->resetForces();
+	_coin->getPhysicsBody()->setVelocity(Vec2(0.0f, 0.0f));
+
+	// 位置のリセット（投入口ボタンにセットする）
+	_coin->setPosition(Vec2(visibleSize.width*0.7, visibleSize.height*0.9));
+
+	// コインの物理を有効にして表示する
+	_coin->getPhysicsBody()->setEnabled(true);
 	_coin->setVisible(true);
 }
 
