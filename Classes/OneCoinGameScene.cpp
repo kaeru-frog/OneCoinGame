@@ -325,6 +325,12 @@ void OneCoinGame::insertCoinCallback(cocos2d::Ref* pSender)
 
 	// 効果音を鳴らす
 	CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("se/coin_entry.wav");
+
+	// パーティクル処理
+	auto particle = ParticleSystemQuad::create("particle/particle_texture.plist");
+	particle->setPosition(Vec2(visibleSize.width*0.7, visibleSize.height*0.9));
+	particle->setAutoRemoveOnFinish(true);		// パーティクルが終了したらNodeを削除する
+	this->addChild(particle, 3);
 }
 
 
