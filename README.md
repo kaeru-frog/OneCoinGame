@@ -5,7 +5,7 @@ Cocos2d-xによる10円ゲームです。ドラッグ操作でレバーをはじ
 
 ## Cocos2d-x開発チュートリアル
 
-http://surfrog.net/one-coin-game-tutorial/
+http://surfrog.net/2016/06/27/cocos2dx-tutorial-mainpage/
   
 
 ## ライセンス
