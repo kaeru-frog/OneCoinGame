@@ -31,6 +31,8 @@ public:
 	void onTouchMoved(cocos2d::Touch* touch, cocos2d::Event* event);
 	void onTouchEnded(cocos2d::Touch* touch, cocos2d::Event* event);
 
+	// コインに力を加える
+	void applyForceCoin(float vecx, float power);
 private:
 	cocos2d::Sprite	*_coin;	// コイン
 	cocos2d::Sprite	*_lever[4];	// レバー

@@ -17,6 +17,14 @@ USING_NS_CC;
 
 #pragma execution_character_set("utf-8")
 
+// レバーの接触部分設定
+Rect leverArea[4] = {
+	Rect(45, 410, 30, 30),
+	Rect(285, 330, 30, 30),
+	Rect(45, 270, 30, 30),
+	Rect(285, 170, 30, 30),
+};
+
 Scene* OneCoinGame::createScene()
 {
 	// シーンを物理エンジンが使用できるシーンにする
@@ -100,6 +108,8 @@ bool OneCoinGame::init()
 
 	// 円形の物理設定
 	auto coinPhysics = PhysicsBody::createCircle(12.5f, coinMaterial);
+	coinPhysics->setMass(1.0);		// 重さ
+	coinPhysics->setMoment(1.0f);	// モーメント。回転させるための力。大きいほど回転しにくい
 
 	// コインに剛体を関連付ける
 	_coin->setPhysicsBody(coinPhysics);
@@ -304,9 +314,28 @@ void OneCoinGame::onTouchEnded(cocos2d::Touch* touch, cocos2d::Event* event)
 		// レバースプライトを初期位置に戻す
 		_lever[_touchLeverNumber]->setRotation(0);
 
+		// コインがレバー範囲にあるか確認
+		if (leverArea[_touchLeverNumber].containsPoint(_coin->getPosition())) {
+			// 範囲内ならコインに力を加える
+			if (_touchLeverNumber == 0 || _touchLeverNumber == 2) {
+				this->applyForceCoin(1.0f, (d / 100.0f));
+			}
+			else {
+				this->applyForceCoin(-1.0f, (d / 100.0f));
+			}
+
+		}
+
 		// レバーのタッチ状態を解除
 		_isTouchLever = false;
 	}
 
+}
+
+
+// コインに力学的な力を加える
+void OneCoinGame::applyForceCoin(float vecx, float power)
+{
+	_coin->getPhysicsBody()->applyImpulse(Vec2(400.0f * power * vecx, 0.0f));
 }
 
