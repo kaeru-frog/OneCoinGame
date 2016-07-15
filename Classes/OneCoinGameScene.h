@@ -33,6 +33,9 @@ public:
 
 	// コインに力を加える
 	void applyForceCoin(float vecx, float power);
+
+	// スケジュール処理
+	void update(float delta);
 private:
 	cocos2d::Sprite	*_coin;	// コイン
 	cocos2d::Sprite	*_lever[4];	// レバー

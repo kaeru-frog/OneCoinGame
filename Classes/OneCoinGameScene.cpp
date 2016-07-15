@@ -24,6 +24,19 @@ Rect leverArea[4] = {
 	Rect(45, 270, 30, 30),
 	Rect(285, 170, 30, 30),
 };
+// 穴の矩形領域
+Rect coinHole[] = {
+	Rect(245, 430, 30, 30),
+	Rect(67, 335, 30, 30),
+	Rect(213, 335, 30, 30),
+	Rect(260, 258, 30, 30),
+	Rect(182, 136, 30, 30),
+	Rect(61, 67, 30, 30),
+};
+// ゴールの矩形領域
+Rect goalHole = {
+	Rect(117, 67, 30, 30),
+};
 
 Scene* OneCoinGame::createScene()
 {
@@ -110,6 +123,8 @@ bool OneCoinGame::init()
 	auto coinPhysics = PhysicsBody::createCircle(12.5f, coinMaterial);
 	coinPhysics->setMass(1.0);		// 重さ
 	coinPhysics->setMoment(1.0f);	// モーメント。回転させるための力。大きいほど回転しにくい
+	coinPhysics->setCategoryBitmask(0x00000001);	// 物体のカテゴリ
+	coinPhysics->setCollisionBitmask(0x00000001);	// 接触する物体のカテゴリを指定
 
 	// コインに剛体を関連付ける
 	_coin->setPhysicsBody(coinPhysics);
@@ -144,6 +159,8 @@ bool OneCoinGame::init()
 		auto wall = Node::create();
 		wall->setPhysicsBody(PhysicsBody::createEdgeChain(vec, 4, PhysicsMaterial(1.0f, 0.5f, 0.2f)));
 		wall->getPhysicsBody()->setDynamic(false);
+		wall->getPhysicsBody()->setCategoryBitmask(0x00000001);		// 物体のカテゴリ
+		wall->getPhysicsBody()->setCollisionBitmask(0x00000001);	// 接触する物体のカテゴリを指定
 		this->addChild(wall);
 	}
 
@@ -187,6 +204,8 @@ bool OneCoinGame::init()
 				rail->setPhysicsBody(PhysicsBody::createEdgeChain(railData.data(), railData.size(),
 					PhysicsMaterial(1.0f, 0.5f, 0.2f)));
 				rail->getPhysicsBody()->setDynamic(false);
+				rail->getPhysicsBody()->setCategoryBitmask(0x00000001);		// 物体のカテゴリ
+				rail->getPhysicsBody()->setCollisionBitmask(0x00000001);	// 接触する物体のカテゴリを指定
 				this->addChild(rail);
 
 				// vectorをクリアする
@@ -222,6 +241,27 @@ bool OneCoinGame::init()
 			this->addChild(_lever[i], 2);
 		}
 	}
+
+	/////////////////////////////
+	// 景品口の物理領域
+	{
+		Vec2 vec[4] = {
+			Vec2(202, 65),	// 左上
+			Vec2(202, 23),	// 左下
+			Vec2(301, 23),	// 右下
+			Vec2(301, 65),	// 右上
+		};
+		auto wall = Node::create();
+		wall->setPhysicsBody(PhysicsBody::createEdgeChain(vec, 4, PhysicsMaterial(1.0f, 0.5f, 0.2f)));
+		wall->getPhysicsBody()->setDynamic(false);
+		wall->getPhysicsBody()->setCategoryBitmask(0x00000010);		// 物体のカテゴリ
+		wall->getPhysicsBody()->setCollisionBitmask(0x00000010);	// 接触する物体のカテゴリを指定
+		this->addChild(wall);
+	}
+
+	/////////////////////////////
+	// スケジュール処理の開始
+	this->scheduleUpdate();
 
     return true;
 }
@@ -337,5 +377,53 @@ void OneCoinGame::onTouchEnded(cocos2d::Touch* touch, cocos2d::Event* event)
 void OneCoinGame::applyForceCoin(float vecx, float power)
 {
 	_coin->getPhysicsBody()->applyImpulse(Vec2(400.0f * power * vecx, 0.0f));
+}
+
+
+// フレーム毎の処理
+void OneCoinGame::update(float delta)
+{
+	/////////////////////////////
+	// コインがはずれ穴とゴールに入っている場合の処理
+	// コインの速度の取得
+	auto velocity = _coin->getPhysicsBody()->getVelocity();
+	float speed = velocity.getDistance(Vec2::ZERO);
+	// コインの速度が一定速度以下かつコインの物理が有効でかどうか
+	if (speed < 3.0f && _coin->getPhysicsBody()->isEnabled()) {
+		// はずれ穴に入っているかどうかの確認
+		for (int i = 0; i < 6; i++) {
+			if (coinHole[i].containsPoint(_coin->getPosition())) {
+				// コインがはずれ穴に落ちた時の処理
+				// コインの物理動作を停止し、非表示にする
+				_coin->getPhysicsBody()->setEnabled(false);
+				_coin->setVisible(false);
+			}
+		}
+
+		// ゴールに入っているかどうかの確認
+		if (goalHole.containsPoint(_coin->getPosition())) {
+			// コインがゴールに到達した時の処理
+			// コインの物理動作を停止し、非表示にする
+			_coin->getPhysicsBody()->setEnabled(false);
+			_coin->setVisible(false);
+
+			/////////////////////////////////
+			// 景品を出す処理
+			auto gift = Sprite::create("gift.png");
+			gift->setPosition(Vec2(250.0f, 74.0f));
+			this->addChild(gift, 1);
+
+			// 景品の物理設定
+			auto giftPhysics = PhysicsBody::createBox(Size(26.0f, 14.0f), PhysicsMaterial(0.6f, 0.3f, 6.0f));
+			giftPhysics->setMass(1.0f);			// 重さ
+			giftPhysics->setMoment(10.0f);		// モーメント(大きいほど回転しにくい)
+			giftPhysics->setCategoryBitmask(0x00000010);	// 物体のカテゴリ
+			giftPhysics->setCollisionBitmask(0x00000010);	// 接触する物体のカテゴリを指定
+			gift->setPhysicsBody(giftPhysics);
+		}
+
+
+	}
+
 }
 
