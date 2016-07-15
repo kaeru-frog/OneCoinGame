@@ -59,7 +59,7 @@ Scene* OneCoinGame::createScene()
 	// 物理シーンのサブステップ数
 	world->setSubsteps(5);
 	// 物理エンジンのデバッグ用の領域を表示
-	world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
+	// world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
 
     // return the scene
     return scene;
@@ -150,6 +150,18 @@ bool OneCoinGame::init()
 	menu->setPosition(Vec2::ZERO);
 	this->addChild(menu, 2);
 	
+	/////////////////////////////
+	// コイン投入口のglow処理
+	{
+		auto sprite = Sprite::create("coin_entry_glow.png");
+		sprite->setPosition(Vec2(visibleSize.width*0.7, visibleSize.height*0.9));
+		this->addChild(sprite, 2);
+
+		// アクション
+		auto blink = Blink::create(1.5f, 1);			// 点滅 1.5秒で1回点滅
+		auto action = RepeatForever::create(blink);		// blinkを永久に繰り返す
+		sprite->runAction(action);
+	}
 
 	/////////////////////////////
 	// 10円ゲーム筐体内部の領域設定
@@ -245,6 +257,13 @@ bool OneCoinGame::init()
 			_lever[i]->setPosition(vec[i]);
 			_lever[i]->setAnchorPoint(Vec2(0.5f, 0.28f));
 			this->addChild(_lever[i], 2);
+
+			// レバーのglow処理
+			auto leverGlow = Sprite::create("lever_glow.png");
+			leverGlow->setAnchorPoint(Vec2(0.0f, 0.0f));
+			_lever[i]->addChild(leverGlow, 2);
+			// 1.5秒に1回の点滅を永久に繰り返す
+			leverGlow->runAction(RepeatForever::create(Blink::create(1.5f, 1)));
 		}
 	}
 
