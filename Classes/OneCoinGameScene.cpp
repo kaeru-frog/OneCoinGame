@@ -56,6 +56,23 @@ bool OneCoinGame::init()
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
 	/////////////////////////////
+	// レバー関連初期処理
+	_isTouchLever = false;
+	_touchLeverNumber = 0;
+	_touchlocation = Vec2(0.0f, 0.0f);
+
+	/////////////////////////////
+	// タッチイベントを使用するための初期処理
+	// タッチに関するイベントリスナーを生成
+	auto listener = EventListenerTouchOneByOne::create();
+	listener->onTouchBegan = CC_CALLBACK_2(OneCoinGame::onTouchBegan, this);
+	listener->onTouchMoved = CC_CALLBACK_2(OneCoinGame::onTouchMoved, this);
+	listener->onTouchEnded = CC_CALLBACK_2(OneCoinGame::onTouchEnded, this);
+	// タッチイベントをリスナーに登録
+	auto dip = Director::getInstance()->getEventDispatcher();
+	dip->addEventListenerWithSceneGraphPriority(listener, this);
+
+	/////////////////////////////
 	// 筐体背景画像の描画
 	auto background = Sprite::create("background.png");
 	background->setPosition(Vec2(180.0f, 320.0f));
@@ -170,6 +187,32 @@ bool OneCoinGame::init()
 		}
 	}
 
+	/////////////////////////////
+	// レバー設定
+	{
+		// レバー位置設定
+		Vec2 vec[4] = {
+			Vec2(45, 400),
+			Vec2(315, 321),
+			Vec2(45, 255),
+			Vec2(315, 160),
+		};
+
+		for (int i = 0; i < 4; i++) {
+			// レバーの背景
+			auto leverBackground = Sprite::create("lever_background.png");
+			leverBackground->setPosition(vec[i]);
+			leverBackground->setAnchorPoint(Vec2(0.5f, 0.28f));
+			this->addChild(leverBackground, 2);
+
+			// レバー部分
+			_lever[i] = Sprite::create("lever.png");
+			_lever[i]->setPosition(vec[i]);
+			_lever[i]->setAnchorPoint(Vec2(0.5f, 0.28f));
+			this->addChild(_lever[i], 2);
+		}
+	}
+
     return true;
 }
 
@@ -191,4 +234,79 @@ void OneCoinGame::insertCoinCallback(cocos2d::Ref* pSender)
 	_coin->setVisible(true);
 }
 
+
+
+// タッチ開始時の処理
+bool OneCoinGame::onTouchBegan(cocos2d::Touch* touch, cocos2d::Event* event)
+{
+	auto location = touch->getLocation();
+	bool isTouchLever = false;
+
+	// タッチしたレバーの調査
+	for (int i = 0; i < 4; i++) {
+		Rect rect = _lever[i]->getBoundingBox();
+
+		// タッチした点がレバー領域内かどうか
+		if (rect.containsPoint(location)){
+			isTouchLever = true;
+			// タッチしたレバーを記憶
+			_touchLeverNumber = i;
+			// タッチした位置を記憶
+			_touchlocation = location;
+		}
+	}
+
+	// レバーをタッチした場合、レバーのタッチ状態を設定する
+	if (isTouchLever == true) {
+		_isTouchLever = true;
+	}
+	else {
+		_isTouchLever = false;
+	}
+
+	// 
+
+	return true;
+}
+
+// タッチ移動時の処理
+void OneCoinGame::onTouchMoved(cocos2d::Touch* touch, cocos2d::Event* event)
+{
+	auto location = touch->getLocation();
+
+	if (_isTouchLever) {
+		float d = _touchlocation.getDistance(location);
+		if (d >= 100.0f) {
+			d = 100.0f;
+		}
+
+		// レバースプライトの更新
+		if (_touchLeverNumber == 0 || _touchLeverNumber == 2) {
+			_lever[_touchLeverNumber]->setRotation(-90.0f * (d / 100.0f)); // 0 - 90 max
+		}
+		else {
+			_lever[_touchLeverNumber]->setRotation(90.0f * (d / 100.0f)); // 0 - 90 max
+		}
+	}
+
+}
+
+// タッチ終了時の処理
+void OneCoinGame::onTouchEnded(cocos2d::Touch* touch, cocos2d::Event* event)
+{
+	auto location = touch->getLocation();
+
+	if (_isTouchLever) {
+		float d = _touchlocation.getDistance(location);
+		if (d >= 100.0f) {
+			d = 100.0f;
+		}
+		// レバースプライトを初期位置に戻す
+		_lever[_touchLeverNumber]->setRotation(0);
+
+		// レバーのタッチ状態を解除
+		_isTouchLever = false;
+	}
+
+}
 
