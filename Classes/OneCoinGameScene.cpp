@@ -10,6 +10,9 @@
 
 #include "OneCoinGameScene.h"
 
+#include <vector>
+#include <fstream>
+
 USING_NS_CC;
 
 #pragma execution_character_set("utf-8")
@@ -117,6 +120,55 @@ bool OneCoinGame::init()
 		this->addChild(wall);
 	}
 
+	/////////////////////////////
+	// railの物理設定
+	{
+		std::vector<Vec2>	railData;
+
+		std::string		filePath = FileUtils::getInstance()->fullPathForFilename("raildata.csv");
+		std::ifstream	ifs(filePath.c_str());
+		std::string		sheetLine;
+
+		// ファイルが存在しない場合
+		if (!ifs) {
+			CCLOG("raildata.csv file not found");
+		}
+
+		// １行ずつ読み込む
+		while (getline(ifs, sheetLine))
+		{
+			std::istringstream sheetStream(sheetLine);
+			std::string temp;
+
+			std::vector<std::string> cellData;              // １行分の文字列のリスト
+			while (getline(sheetStream, temp, ','))
+			{
+				// １セル分の文字列をリストに追加する
+				cellData.push_back(temp);
+			}
+
+			auto pos = Vec2(std::stoi(cellData[0]), std::stoi(cellData[1]));
+			if (0 == std::stoi(cellData[2])) {
+				// 終端以外
+				railData.push_back(pos);
+			}
+			else {
+				// 終端
+				railData.push_back(pos);
+				
+				auto rail = Node::create();
+				rail->setPhysicsBody(PhysicsBody::createEdgeChain(railData.data(), railData.size(),
+					PhysicsMaterial(1.0f, 0.5f, 0.2f)));
+				rail->getPhysicsBody()->setDynamic(false);
+				this->addChild(rail);
+
+				// vectorをクリアする
+				railData.clear();
+				railData.shrink_to_fit();
+			}
+
+		}
+	}
 
     return true;
 }
