@@ -36,6 +36,9 @@ public:
 
 	// スケジュール処理
 	void update(float delta);
+
+	// 接触イベントの検知
+	bool onContactBegin(cocos2d::PhysicsContact& contact);
 private:
 	cocos2d::Sprite	*_coin;	// コイン
 	cocos2d::Sprite	*_lever[4];	// レバー

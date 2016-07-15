@@ -13,6 +13,8 @@
 #include <vector>
 #include <fstream>
 
+#include <SimpleAudioEngine.h>
+
 USING_NS_CC;
 
 #pragma execution_character_set("utf-8")
@@ -125,6 +127,8 @@ bool OneCoinGame::init()
 	coinPhysics->setMoment(1.0f);	// モーメント。回転させるための力。大きいほど回転しにくい
 	coinPhysics->setCategoryBitmask(0x00000001);	// 物体のカテゴリ
 	coinPhysics->setCollisionBitmask(0x00000001);	// 接触する物体のカテゴリを指定
+	coinPhysics->setContactTestBitmask(0x00000001);	// 接触イベントの検知マスク
+	coinPhysics->setName("coin");
 
 	// コインに剛体を関連付ける
 	_coin->setPhysicsBody(coinPhysics);
@@ -161,6 +165,7 @@ bool OneCoinGame::init()
 		wall->getPhysicsBody()->setDynamic(false);
 		wall->getPhysicsBody()->setCategoryBitmask(0x00000001);		// 物体のカテゴリ
 		wall->getPhysicsBody()->setCollisionBitmask(0x00000001);	// 接触する物体のカテゴリを指定
+		wall->getPhysicsBody()->setContactTestBitmask(0x00000001);	// 接触イベントの検知マスク
 		this->addChild(wall);
 	}
 
@@ -206,6 +211,7 @@ bool OneCoinGame::init()
 				rail->getPhysicsBody()->setDynamic(false);
 				rail->getPhysicsBody()->setCategoryBitmask(0x00000001);		// 物体のカテゴリ
 				rail->getPhysicsBody()->setCollisionBitmask(0x00000001);	// 接触する物体のカテゴリを指定
+				rail->getPhysicsBody()->setContactTestBitmask(0x00000001);	// 接触イベントの検知マスク
 				this->addChild(rail);
 
 				// vectorをクリアする
@@ -260,6 +266,21 @@ bool OneCoinGame::init()
 	}
 
 	/////////////////////////////
+	// 衝突イベントの検知
+	auto contactListener = EventListenerPhysicsContact::create();
+	contactListener->onContactBegin = CC_CALLBACK_1(OneCoinGame::onContactBegin, this);
+	this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(contactListener, this);
+
+	/////////////////////////////
+	// サウンド
+	// サウンドのプリロード
+	CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect("se/coin_entry.wav");
+	CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect("se/coin_contact.wav");
+	CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect("se/coin_hole.wav");
+	CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect("se/goal.wav");
+	CocosDenshion::SimpleAudioEngine::getInstance()->preloadEffect("se/lever.wav");
+
+	/////////////////////////////
 	// スケジュール処理の開始
 	this->scheduleUpdate();
 
@@ -282,6 +303,9 @@ void OneCoinGame::insertCoinCallback(cocos2d::Ref* pSender)
 	// コインの物理を有効にして表示する
 	_coin->getPhysicsBody()->setEnabled(true);
 	_coin->setVisible(true);
+
+	// 効果音を鳴らす
+	CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("se/coin_entry.wav");
 }
 
 
@@ -366,6 +390,9 @@ void OneCoinGame::onTouchEnded(cocos2d::Touch* touch, cocos2d::Event* event)
 
 		}
 
+		// 効果音を鳴らす
+		CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("se/lever.wav");
+
 		// レバーのタッチ状態を解除
 		_isTouchLever = false;
 	}
@@ -397,6 +424,9 @@ void OneCoinGame::update(float delta)
 				// コインの物理動作を停止し、非表示にする
 				_coin->getPhysicsBody()->setEnabled(false);
 				_coin->setVisible(false);
+
+				// 効果音を鳴らす
+				CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("se/coin_hole.wav");
 			}
 		}
 
@@ -420,10 +450,32 @@ void OneCoinGame::update(float delta)
 			giftPhysics->setCategoryBitmask(0x00000010);	// 物体のカテゴリ
 			giftPhysics->setCollisionBitmask(0x00000010);	// 接触する物体のカテゴリを指定
 			gift->setPhysicsBody(giftPhysics);
+
+
+			// 効果音を鳴らす
+			CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("se/goal.wav");
 		}
 
 
 	}
 
 }
+
+// 衝突が発生した際に呼ばれるイベント
+bool OneCoinGame::onContactBegin(PhysicsContact& contact)
+{
+	// 衝突した2つの物体について取得
+	auto bodyA = contact.getShapeA()->getBody();
+	auto bodyB = contact.getShapeB()->getBody();
+
+	// 衝突した物体がコインかどうかを調べる
+	if ("coin" == bodyA->getName() ||
+		"coin" == bodyB->getName()) {
+		// コインなら効果音を鳴らす
+		CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("se/coin_contact.wav");
+	}
+
+	return true;
+}
+
 
